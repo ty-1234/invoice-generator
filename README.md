@@ -6,7 +6,7 @@ Invoice Generator for Freelancers is a full‑stack web application that lets in
 
 ## Features
 
-### Must‑Have
+
 
 - **Authentication (JWT)**: Secure login and registration using JSON Web Tokens, issued by the backend and stored in **HTTP‑only cookies** (or Bearer tokens for API clients).
 - **Role‑based Access Control (RBAC)**:
@@ -283,7 +283,7 @@ Base path: `/api/v1`
 - **PATCH** `/invoices/:id` – Update invoice.
 - **DELETE** `/invoices/:id` – Delete invoice.
 
-### Payments (Bonus)
+### Payments 
 
 - **POST** `/invoices/:id/pay` – Create a Stripe PaymentIntent and return `client_secret`.
 - **POST** `/webhooks/stripe` – Stripe webhook endpoint to update invoice/payment status.
