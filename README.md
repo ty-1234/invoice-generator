@@ -499,8 +499,6 @@ Once running, you can:
 ---
 
 ## How to Use This README
-
-- **As a project blueprint**: Follow this as a guide to implement the full application.
 - **As documentation**: Attach it to an existing implementation to explain its architecture and design decisions.
 
 You can adapt the tech choices (e.g., swap Express for NestJS or Prisma for TypeORM), but the **architecture, features, and behaviors described here satisfy the original project requirements** for an invoice generator for freelancers.
