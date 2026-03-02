@@ -6,7 +6,7 @@ Invoice Generator for Freelancers is a full‑stack web application that lets in
 
 ## Features
 
-### Must‑Have
+
 
 - **Authentication (JWT)**: Secure login and registration using JSON Web Tokens, issued by the backend and stored in **HTTP‑only cookies** (or Bearer tokens for API clients).
 - **Role‑based Access Control (RBAC)**:
@@ -283,7 +283,7 @@ Base path: `/api/v1`
 - **PATCH** `/invoices/:id` – Update invoice.
 - **DELETE** `/invoices/:id` – Delete invoice.
 
-### Payments (Bonus)
+### Payments 
 
 - **POST** `/invoices/:id/pay` – Create a Stripe PaymentIntent and return `client_secret`.
 - **POST** `/webhooks/stripe` – Stripe webhook endpoint to update invoice/payment status.
@@ -460,6 +460,7 @@ Frontend environment (example):
    ```
 
 5. Open [http://localhost:5173](http://localhost:5173) in your browser.
+<img width="1189" height="635" alt="image" src="https://github.com/user-attachments/assets/38f65247-290d-4742-ade5-cfeb3fd97c75" />
 
 ### Docker Deployment
 
@@ -499,8 +500,6 @@ Once running, you can:
 ---
 
 ## How to Use This README
-
-- **As a project blueprint**: Follow this as a guide to implement the full application.
 - **As documentation**: Attach it to an existing implementation to explain its architecture and design decisions.
 
 You can adapt the tech choices (e.g., swap Express for NestJS or Prisma for TypeORM), but the **architecture, features, and behaviors described here satisfy the original project requirements** for an invoice generator for freelancers.
