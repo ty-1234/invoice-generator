@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { apiGetMock, apiPostMock, apiPatchMock, apiDeleteMock } = vi.hoisted(() => ({
   apiGetMock: vi.fn(),
@@ -21,6 +21,10 @@ import { invoicesApi } from './invoices';
 describe('invoicesApi', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('builds list query string with optional params', () => {
@@ -56,5 +60,22 @@ describe('invoicesApi', () => {
     invoicesApi.createPaymentIntent('inv-22');
 
     expect(apiPostMock).toHaveBeenCalledWith('/invoices/inv-22/pay');
+  });
+
+  it('downloads invoice PDF as blob', async () => {
+    const blob = new Blob(['pdf-bytes'], { type: 'application/pdf' });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      blob: async () => blob,
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await invoicesApi.downloadPdf('inv-1');
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/invoices/inv-1/pdf', {
+      method: 'GET',
+      credentials: 'include',
+    });
+    expect(result).toBe(blob);
   });
 });

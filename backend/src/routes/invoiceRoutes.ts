@@ -45,6 +45,7 @@ const idParam = [param('id').isMongoId().withMessage('Invalid invoice ID')];
 router.post('/', validate(createValidation), invoiceController.create);
 router.get('/', invoiceController.list);
 router.get('/:id', validate(idParam), invoiceController.getById);
+router.get('/:id/pdf', validate(idParam), invoiceController.downloadPdf);
 router.patch('/:id', validate(updateValidation), invoiceController.update);
 router.delete('/:id', validate(idParam), invoiceController.remove);
 

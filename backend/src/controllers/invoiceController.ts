@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as invoiceService from '../services/invoiceService';
+import { generateInvoicePdf } from '../utils/pdf';
 
 export const create = async (req: Request, res: Response): Promise<void> => {
   if (!req.user) {
@@ -55,4 +56,20 @@ export const remove = async (req: Request, res: Response): Promise<void> => {
 
   await invoiceService.deleteInvoice(req.params.id, req.user);
   res.status(204).send();
+};
+
+export const downloadPdf = async (req: Request, res: Response): Promise<void> => {
+  if (!req.user) {
+    res.status(401).json({ message: 'Not authenticated' });
+    return;
+  }
+
+  const invoice = await invoiceService.getInvoiceById(req.params.id, req.user);
+  const pdfBuffer = generateInvoicePdf(invoice);
+  const safeNumber = invoice.number.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${safeNumber}.pdf"`);
+  res.setHeader('Content-Length', pdfBuffer.length.toString());
+  res.send(pdfBuffer);
 };

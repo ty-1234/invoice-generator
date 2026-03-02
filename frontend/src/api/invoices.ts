@@ -23,6 +23,21 @@ export const invoicesApi = {
   }) => api.post<Invoice>('/invoices', data),
   update: (id: string, data: Partial<Invoice>) => api.patch<Invoice>(`/invoices/${id}`, data),
   delete: (id: string) => api.delete(`/invoices/${id}`),
+  downloadPdf: async (id: string) => {
+    const res = await fetch(`/api/v1/invoices/${id}/pdf`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({} as { message?: string }));
+      const err = new Error(data.message || 'Failed to download PDF') as Error & { status?: number };
+      err.status = res.status;
+      throw err;
+    }
+
+    return res.blob();
+  },
   createPaymentIntent: (invoiceId: string) =>
     api.post<{ clientSecret: string; amount: number }>(`/invoices/${invoiceId}/pay`),
 };

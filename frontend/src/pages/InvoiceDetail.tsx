@@ -1,5 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { invoicesApi } from '../api/invoices';
 
@@ -15,6 +16,7 @@ export default function InvoiceDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   const { data: invoice, isLoading } = useQuery({
     queryKey: ['invoice', id],
@@ -37,6 +39,27 @@ export default function InvoiceDetail() {
 
   const client = typeof invoice.clientId === 'object' ? invoice.clientId : null;
 
+  const handleDownloadPdf = async () => {
+    if (!id) return;
+
+    setIsDownloadingPdf(true);
+    try {
+      const pdfBlob = await invoicesApi.downloadPdf(id);
+      const objectUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = `${invoice.number}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to download PDF');
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-between items-start mb-6">
@@ -47,6 +70,13 @@ export default function InvoiceDetail() {
           </span>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={handleDownloadPdf}
+            disabled={isDownloadingPdf}
+            className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition disabled:opacity-50"
+          >
+            {isDownloadingPdf ? 'Downloading...' : 'Download PDF'}
+          </button>
           <Link
             to={`/invoices/${id}/edit`}
             className="px-4 py-2 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition"
