@@ -1,6 +1,9 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import type { FormEvent } from 'react';
+import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import toast from 'react-hot-toast';
 import { invoicesApi } from '../api/invoices';
 
@@ -12,11 +15,88 @@ const statusClass: Record<string, string> = {
   cancelled: 'bg-slate-100 text-slate-500',
 };
 
+const stripePublicKey = (import.meta.env.VITE_STRIPE_PUBLIC_KEY ?? '').trim();
+const stripePromise = stripePublicKey ? loadStripe(stripePublicKey) : null;
+
+interface CheckoutFormProps {
+  amount: number;
+  currency: string;
+  onCancel: () => void;
+  onSuccess: () => Promise<void> | void;
+}
+
+function CheckoutForm({ amount, currency, onCancel, onSuccess }: CheckoutFormProps) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!stripe || !elements) return;
+
+    setIsProcessing(true);
+    try {
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.href,
+        },
+        redirect: 'if_required',
+      });
+
+      if (error) {
+        toast.error(error.message || 'Payment failed');
+        return;
+      }
+
+      if (paymentIntent?.status === 'succeeded') {
+        toast.success('Payment successful');
+        await onSuccess();
+        return;
+      }
+
+      toast.error('Payment did not complete');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="rounded-lg border border-slate-200 bg-white p-4">
+        <p className="mb-3 text-sm text-slate-600">
+          Amount due: <span className="font-semibold text-slate-900">{currency} {amount.toFixed(2)}</span>
+        </p>
+        <PaymentElement />
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={isProcessing || !stripe || !elements}
+          className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition disabled:opacity-50"
+        >
+          {isProcessing ? 'Processing...' : 'Confirm payment'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={isProcessing}
+          className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition disabled:opacity-50"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export default function InvoiceDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   const { data: invoice, isLoading } = useQuery({
     queryKey: ['invoice', id],
@@ -30,6 +110,17 @@ export default function InvoiceDetail() {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Invoice deleted');
       navigate('/invoices');
+    },
+  });
+
+  const createPaymentIntentMutation = useMutation({
+    mutationFn: () => invoicesApi.createPaymentIntent(id!),
+    onSuccess: (data) => {
+      setClientSecret(data.clientSecret);
+      setShowCheckout(true);
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to initialize payment');
     },
   });
 
@@ -60,6 +151,21 @@ export default function InvoiceDetail() {
     }
   };
 
+  const handleStartCheckout = () => {
+    if (!stripePromise) {
+      toast.error('Stripe is not configured on frontend. Set VITE_STRIPE_PUBLIC_KEY.');
+      return;
+    }
+    createPaymentIntentMutation.mutate();
+  };
+
+  const handleCheckoutSuccess = async () => {
+    setShowCheckout(false);
+    setClientSecret(null);
+    await queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+    await queryClient.invalidateQueries({ queryKey: ['invoices'] });
+  };
+
   return (
     <div>
       <div className="flex justify-between items-start mb-6">
@@ -83,6 +189,15 @@ export default function InvoiceDetail() {
           >
             Edit
           </Link>
+          {invoice.status !== 'paid' && (
+            <button
+              onClick={handleStartCheckout}
+              disabled={createPaymentIntentMutation.isPending}
+              className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition disabled:opacity-50"
+            >
+              {createPaymentIntentMutation.isPending ? 'Preparing payment...' : 'Pay'}
+            </button>
+          )}
           {invoice.status !== 'paid' && (
             <button
               onClick={() => {
@@ -173,6 +288,23 @@ export default function InvoiceDetail() {
             </p>
           </div>
         </div>
+
+        {invoice.status !== 'paid' && showCheckout && clientSecret && stripePromise && (
+          <div className="px-6 py-4 border-t border-slate-200 bg-slate-50">
+            <h4 className="text-sm font-medium text-slate-700 mb-3">Pay invoice</h4>
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <CheckoutForm
+                amount={invoice.total}
+                currency={invoice.currency}
+                onCancel={() => {
+                  setShowCheckout(false);
+                  setClientSecret(null);
+                }}
+                onSuccess={handleCheckoutSuccess}
+              />
+            </Elements>
+          </div>
+        )}
 
         {invoice.notes && (
           <div className="px-6 py-4 border-t border-slate-200">
