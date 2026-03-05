@@ -11,18 +11,18 @@ export default function Layout() {
   };
 
   const navClass = ({ isActive }: { isActive: boolean }) =>
-    `px-4 py-2 rounded-lg font-medium transition-colors ${
+    `block w-full px-4 py-2 rounded-lg font-medium transition-colors ${
       isActive ? 'bg-primary-100 text-primary-800' : 'text-slate-600 hover:bg-slate-100'
     }`;
 
   return (
     <div className="min-h-screen flex">
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
+      <aside className="w-64 shrink-0 bg-white border-r border-slate-200 flex flex-col">
         <div className="p-6 border-b border-slate-200">
           <h1 className="text-xl font-bold text-primary-600">Invoice Generator</h1>
           <p className="text-sm text-slate-500 mt-0.5">For Freelancers</p>
         </div>
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 flex flex-col gap-1">
           <NavLink to="/" className={navClass} end>Dashboard</NavLink>
           <NavLink to="/invoices" className={navClass}>Invoices</NavLink>
           <NavLink to="/clients" className={navClass}>Clients</NavLink>

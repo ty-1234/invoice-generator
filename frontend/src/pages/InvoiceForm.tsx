@@ -98,6 +98,7 @@ export default function InvoiceForm() {
 
   const { fields, append, remove } = useFieldArray({ control, name: 'lineItems' });
   const lineItems = watch('lineItems');
+  const selectedCurrency = watch('currency') || 'USD';
 
   useEffect(() => {
     if (isEdit && invoice) {
@@ -124,6 +125,17 @@ export default function InvoiceForm() {
     (sum, item) => sum + (item.quantity ?? 0) * (item.unitPrice ?? 0),
     0
   );
+
+  const formatCurrency = (value: number) => {
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: selectedCurrency,
+      }).format(value);
+    } catch {
+      return `${selectedCurrency} ${value.toFixed(2)}`;
+    }
+  };
 
   const onSubmit = (data: FormData) => {
     if (isEdit) {
@@ -239,8 +251,8 @@ export default function InvoiceForm() {
                   placeholder="Price"
                   className="w-28 px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary-500 outline-none"
                 />
-                <span className="py-2.5 text-slate-600 w-20">
-                  ${((lineItems[i]?.quantity ?? 0) * (lineItems[i]?.unitPrice ?? 0)).toFixed(2)}
+                <span className="py-2.5 text-slate-600 w-28 text-right">
+                  {formatCurrency((lineItems[i]?.quantity ?? 0) * (lineItems[i]?.unitPrice ?? 0))}
                 </span>
                 {fields.length > 1 && (
                   <button type="button" onClick={() => remove(i)} className="text-red-600 hover:text-red-700 p-2">
@@ -256,7 +268,7 @@ export default function InvoiceForm() {
         </div>
 
         <div className="flex justify-end">
-          <p className="text-lg font-semibold">Subtotal: ${subtotal.toFixed(2)}</p>
+          <p className="text-lg font-semibold">Subtotal: {formatCurrency(subtotal)}</p>
         </div>
 
         <div>
