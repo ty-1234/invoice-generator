@@ -460,7 +460,8 @@ Frontend environment (example):
    ```
 
 5. Open [http://localhost:5173](http://localhost:5173) in your browser.
-<img width="1189" height="635" alt="image" src="https://github.com/user-attachments/assets/38f65247-290d-4742-ade5-cfeb3fd97c75" />
+<img width="1917" height="909" alt="image" src="https://github.com/user-attachments/assets/23a52012-d9ea-4e65-827f-c5786fb8361b" />
+
 
 ### Docker Deployment
 
